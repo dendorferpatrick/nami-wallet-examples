@@ -54,7 +54,10 @@ let nami;
     }, [])
 
 
+
 ```
+Before you can use the ```NamiWalletApi``` you have to create an account to get a blockfrost api key [https://blockfrost.io/](https://blockfrost.io/).
+
 Check if Nami is installed
 ```js
 nami.isInstalled()
