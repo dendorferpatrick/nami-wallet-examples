@@ -4,3 +4,4 @@ Dockerfile
 **node_modules
 deploy.sh
 **package-lock.json
+config.js

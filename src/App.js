@@ -1,20 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Buffer } from "buffer";
-import cardano from "./nami-js/index"
+import DateTimePicker from 'react-datetime-picker';
 import './App.css';
-import AssetFingerprint from '@emurgo/cip14-js';
 
-
-// Helper functions
-const hexToAscii = (hex) => {
-    // connverts hex to ascii string
-    var _hex = hex.toString();
-    var str = "";
-    for (var i = 0; i < _hex.length && _hex.substr(i, 2) !== "00"; i += 2)
-        str += String.fromCharCode(parseInt(_hex.substr(i, 2), 16));
-    return str;
-};
-
+import NamiWalletApi, { Cardano } from './nami-js';
+import blockfrostApiKey from '../config.js'; 
+let nami;
 
 
 export default function App() {
@@ -22,20 +12,53 @@ export default function App() {
     const [address, setAddress] = useState()
     const [nfts, setNfts] = useState([])
     const [balance, setBalance] = useState()
+    const [transaction, setTransaction] = useState()
+    const [amount, setAmount] = useState("10")
+    const [txHash, setTxHash] = useState()
+    const [recipientAddress, setRecipientAddress] = useState("addr_test1qqsjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscs57k2ql")
+    const [witnesses, setWitnesses] = useState()
+    const [policy, setPolicy] = useState()
+    
+
+    const [complextxHash, setComplextxHash] = useState()
+    const [policyExpiration, setPolicyExpiration] = useState(new Date());
+    const [complexTransaction, setComplexTransaction] = useState({recipients: [{address:"addr_test1qqsjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscs57k2ql", 
+        amount: "3", 
+        mintedAssets:[{assetName: "MyNFT", quantity:'1',  policyId: "Example PolicyID", 
+        policyScript:"ExamplePolicy"}] }]})
 
     useEffect(() => {
-        checkConnection()
-    }, []
-    )
+        const defaultDate = new Date();
+        defaultDate.setTime(defaultDate.getTime() + (1 * 60 * 90 * 1000))
+        setPolicyExpiration(defaultDate);
 
-    // Nami functionalities
-    const checkConnection = async () => {
-        // Checks if nami wallet is already connected to website
-        await window.cardano.isEnabled().then(result => { setConnected(result) })
-    }
+    }, [])
+    useEffect(() => {
+        async function t() {
+
+            const S = await Cardano();
+            nami = new NamiWalletApi(
+                S,
+                window.cardano,
+               blockfrostApiKey
+            )
+
+
+            if (await nami.isInstalled()) {
+                await nami.isEnabled().then(result => { setConnected(result) })
+
+            }
+        }
+
+        t()
+    }, [])
+
+
+
+   
     const connect = async () => {
         // Connects nami wallet to current website 
-        await window.cardano.enable()
+        await nami.enable()
             .then(result => setConnected(result))
             .catch(e => console.log(e))
     }
@@ -45,71 +68,127 @@ export default function App() {
         if (!connected) {
             await connect()
         }
-        const loader = await cardano()
-        const addressHex = Buffer.from(
-            (await window.cardano.getUsedAddresses())[0],
-            "hex"
-        );
+        await nami.getAddress().then((newAddress) => { console.log(newAddress); setAddress(newAddress) })
+    }
 
-        const address = loader.BaseAddress.from_address(
-            loader.Address.from_bytes(addressHex)
-        )
-            .to_address()
-            .to_bech32();
 
-        setAddress(address)
+    const getBalance = async () => {
+        if (!connected) {
+            await connect()
+        }
+        await nami.getBalance().then(result => { console.log(result); setNfts(result.assets); setBalance(result.lovelace) })
+    }
+
+
+    const buildTransaction = async () => {
+        if (!connected) {
+            await connect()
+        }
+
+        const recipients = [{ "address": recipientAddress, "amount": amount }]
+        let utxos = await nami.getUtxosHex();
+        const myAddress = await nami.getAddress();
+        
+        let netId = await nami.getNetworkId();
+        const t = await nami.transaction({
+            PaymentAddress: myAddress,
+            recipients: recipients,
+            metadata: null,
+            utxosRaw: utxos,
+            networkId: netId.id,
+            ttl: 3600,
+            multiSig: null
+        })
+        console.log(t)
+        setTransaction(t)
     }
 
 
 
-
-
-    const getBalance = async () => {
-        // get balance of Nami Wallet
+    const buildFullTransaction = async () => {
         if (!connected) {
             await connect()
         }
-        const loader = await cardano()
-        const valueCBOR = await window.cardano.getBalance()
-        const value = loader.Value.from_bytes(Buffer.from(valueCBOR, "hex"))
-        const lovelace = parseInt(value.coin().to_str())
+        try {
+        const recipients = complexTransaction.recipients
+        let utxos = await nami.getUtxosHex();
+        
+        const myAddress = await nami.getAddress();
+        console.log(myAddress)
+        let netId = await nami.getNetworkId();
 
-        const nfts = [];
-        if (value.multiasset()) {
-            const multiAssets = value.multiasset().keys();
-            for (let j = 0; j < multiAssets.len(); j++) {
-                const policy = multiAssets.get(j);
-                const policyAssets = value.multiasset().get(policy);
-                const assetNames = policyAssets.keys();
-                for (let k = 0; k < assetNames.len(); k++) {
-                    const policyAsset = assetNames.get(k);
-                    const quantity = policyAssets.get(policyAsset);
-                    const asset =
-                        Buffer.from(policy.to_bytes(), 'hex').toString('hex') +
-                        Buffer.from(policyAsset.name(), 'hex').toString('hex');
-                    const _policy = asset.slice(0, 56);
-                    const _name = asset.slice(56);
-                    const fingerprint = new AssetFingerprint(
-                        Buffer.from(_policy, 'hex'),
-                        Buffer.from(_name, 'hex')
-                    ).fingerprint();
-                    nfts.push({
-                        unit: asset,
-                        quantity: quantity.to_str(),
-                        policy: _policy,
-                        name: hexToAscii(_name),
-                        fingerprint,
-                    });
-                }
-            }
+        const t = await nami.transaction({
+            PaymentAddress: myAddress,
+            recipients: recipients,
+            metadata: null,
+            utxosRaw: utxos,
+            networkId: netId.id,
+            ttl: 3600,
+            multiSig: null
+        })
+        
+        const signature = await nami.signTx(t)
+        console.log(t, signature, netId.id)
+        const txHash = await nami.submitTx({
+            transactionRaw: t,
+            witnesses: [signature],
+
+            networkId: netId.id
+        })
+        console.log(txHash)
+        setComplextxHash(txHash)
+    } catch (e){
+        console.log(e)
+    }
+    }
+
+
+    
+    const signTransaction = async () => {
+        if (!connected) {
+            await connect()
         }
 
-        setBalance(lovelace)
-        setNfts(nfts)
-    };
+        const witnesses = await nami.signTx(transaction)
+        setWitnesses(witnesses)
+    }
+
+    const submitTransaction = async () => {
+        let netId = await nami.getNetworkId();
+        const txHash = await nami.submitTx({
+            transactionRaw: transaction,
+            witnesses: [witnesses],
+
+            networkId: netId.id
+        })
+        setTxHash(txHash)
+
+    }
+
+    const createPolicy = async () => {
+        console.log(policyExpiration)
+        try {
+            await nami.enable()
 
 
+            const myAddress = await nami.getHexAddress();
+            
+            let networkId = await nami.getNetworkId()
+            const newPolicy = await nami.createLockingPolicyScript(myAddress, networkId.id, policyExpiration)
 
+            setPolicy(newPolicy)
+            setComplexTransaction((prevState) => 
+            {const state = prevState;   state.recipients[0].mintedAssets[0].policyId = newPolicy.id; 
+                state.recipients[0].mintedAssets[0].policyScript = newPolicy.script; 
+                state.metadata = {"721": {[newPolicy.script]: 
+                    {[state.recipients[0].mintedAssets[0].assetName]: {name: "MyNFT", description: "This is a test NFT", image: "ipfs://QmUb8fW7qm1zCLhiKLcFH9yTCZ3hpsuKdkTgKmC8iFhxV8",}} }};
+                 return {...state}})
+
+        } catch (e) {
+            console.log(e)
+        }
+
+    }
 
     return (<>
         <div className="container">
@@ -158,12 +237,131 @@ export default function App() {
                     }
 
                 </div>
+                <div className="row" >
+                    <h1> 4. Build Transaction</h1>
+                </div>
+                <div className="row" >
+                    <button className={`button ${(transaction) ? "success" : ""}`} onClick={() => { if (amount && recipientAddress) buildTransaction() }}> Build Transaction</button>
+                    <div className="column" >
+
+
+
+                        <div className="item address"><p> Amount</p><input style={{ width: "400px", height: "30px", }}
+                            value={amount}
+                            onChange={(event) => setAmount(event.target.value.toString())} /></div>
+
+                        <div className="item address"><p> Recipient Address</p>
+                            <input style={{ width: "400px", height: "30px" }}
+                                value={recipientAddress}
+                                onChange={(event) => setRecipientAddress(event.target.value.toString())} /></div>
+
+                    </div>
+
+
+
+
+                </div>
+
+                <div className="row" >
+                    <h1> 5. Sign Transaction</h1>
+                </div>
+                <div className="row" >
+                    <button className={`button ${(witnesses) ? "success" : ""}`} onClick={() => { if (transaction) signTransaction() }}> Sign Transaction</button>
+                    <div className="column" >
+
+
+
+
+
+
+                    </div>
+                </div>
+                <div className="row" >
+                    <h1> 6. Submit Transaction</h1>
+                </div>
+                <div className="row" >
+                    <button className={`button ${(txHash) ? "success" : ""}`} onClick={() => { console.log(witnesses); if (witnesses) submitTransaction() }}> Submit Transaction</button>
+
+                    <div className="column" >
+                        <div className="item address">
+                            <p>TxHash:  {txHash} </p>
+                        </div>
+
+
+
+
+
+                    </div>
+
+                </div>
+                <div className="row" >
+                    <h1> 7. Create Policy Script</h1>
+                </div>
+                <div className="row" >
+                    <button className={`button ${(policy) ? "success" : ""}`} onClick={() => { if (policyExpiration) createPolicy() }}> Create Policy</button>
+
+                    <div className="column" >
+                    <p>Set Policy Expriaton Date: <DateTimePicker
+                               
+                               onChange={setPolicyExpiration}
+                               value={policyExpiration}
+                               minDate={new Date()}
+                           />
+                           </p>
+                        <div className="item address">
+                        
+                            <p>policyId:  {policy?.id} </p>
+                            <p>policyScript:  {policy?.script} </p>
+                            <p>paymentKeyHash:  {policy?.paymentKeyHash} </p>
+                            <p>ttl:  {policy?.ttl} </p>
+                        </div>
+
+
+
+
+
+                    </div>
+
+                </div>
+
+
+
             </div>
+
+            
+
+                <div className="row" >
+                    <h1> 8. Build Full Transaction (incl. Minting)</h1>
+                </div>
+                <div className="row" >
+                    <button className={`button ${(complextxHash) ? "success" : ""}`} onClick={ buildFullTransaction}> Build Transaction</button>
+                    <div className="column" >
+
+
+                    <div className="item address">
+                            <p>Complex TxHash:  {complextxHash} </p>
+                        </div>
+
+                        <div className="item address"><p> Recipients Input</p><textarea style={{ width: "400px", height: "500px", }}
+                            value={JSON.stringify(complexTransaction)}
+                            onChange={(event) => {setComplexTransaction((prevState) =>( {...JSON.parse(event.target.value)}))}} /></div>
+
+                      
+
+                    </div>
+
+
+
+
+                </div>
+            
+            
         </div>
-
-
-
 
     </>
     )
 }
+
+
+
+    
