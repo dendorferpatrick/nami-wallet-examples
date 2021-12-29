@@ -96,7 +96,7 @@ Get Current Network of Nami
 let network = nami.getNetworkId()
 console.log(network)
 ```
-Get balance and assets in wallet
+Get balance and assets in wallet (be aware that the amount can be more than shown in the nami wallet because if you hold NFTs those capture some of your ADA)
 ```js
 async nami.getBalance () : {lovelave: <amountLovelace>, assets: <assetList>}
 ```
