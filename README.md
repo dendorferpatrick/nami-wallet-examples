@@ -30,6 +30,17 @@ npm run start
 ```
 Run our example app to try out the functionalities of our package.
 
+Before you can use the NamiWalletApi you have to create an account to get a blockfrost api key https://blockfrost.io/.
+Create a ```./config.js``` file and add your API key information.
+```js
+const blockfrostApiKey = {
+    0: "rbkrp5hOr3khPAWNo3x47t6CP7qKFyA5", // testnet
+    1: "mainnetfqH0CVlBesnsj5IKhgIYCn231KzqUOyk" // mainnet
+}
+
+export default blockfrostApiKey;
+```
+
 ## Getting started Functionalities
 Import Nami Wallet
 ```js
@@ -85,7 +96,7 @@ Get Current Network of Nami
 let network = nami.getNetworkId()
 console.log(network)
 ```
-Get balance and assets in wallet
+Get balance and assets in wallet (be aware that the amount can be more than shown in the nami wallet because if you hold NFTs those capture some of your ADA)
 ```js
 async nami.getBalance () : {lovelave: <amountLovelace>, assets: <assetList>}
 ```
