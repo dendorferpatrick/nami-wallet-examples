@@ -111,6 +111,8 @@ export default function App() {
         }
         try {
         const recipients = complexTransaction.recipients
+        const metadataTransaction = complexTransaction.metadata
+        console.log(metadataTransaction)
         let utxos = await nami.getUtxosHex();
         
         const myAddress = await nami.getAddress();
@@ -120,7 +122,7 @@ export default function App() {
         const t = await nami.transaction({
             PaymentAddress: myAddress,
             recipients: recipients,
-            metadata: null,
+            metadata: metadataTransaction,
             utxosRaw: utxos,
             networkId: netId.id,
             ttl: 3600,
@@ -180,8 +182,8 @@ export default function App() {
             setComplexTransaction((prevState) => 
             {const state = prevState;   state.recipients[0].mintedAssets[0].policyId = newPolicy.id; 
                 state.recipients[0].mintedAssets[0].policyScript = newPolicy.script; 
-                state.metadata = {"721": {[newPolicy.script]: 
-                    {[state.recipients[0].mintedAssets[0].assetName]: {name: "MyNFT", description: "This is a test NFT", image: "ipfs://QmUb8fW7qm1zCLhiKLcFH9yTCZ3hpsuKdkTgKmC8iFhxV8",}} }};
+                state.metadata = {"721": {[newPolicy.id]: 
+                    {[state.recipients[0].mintedAssets[0].assetName]: {name: "MyNFT", description: "Test NFT", image: "ipfs://QmUb8fW7qm1zCLhiKLcFH9yTCZ3hpsuKdkTgKmC8iFhxV8"}} }};
                  return {...state}})
 
         } catch (e) {

@@ -82,11 +82,22 @@ class NamiWalletApi {
     if (!this.isEnabled()) {
         await this.enable()
     }
-    
+    let networkId = await this.getNetworkId(); 
+    let protocolParameter = await this._getProtocolParameter(networkId.id)
+
     const valueCBOR = await this.Nami.getBalance()
     const value = this.S.Value.from_bytes(Buffer.from(valueCBOR, "hex"))
-    const lovelace = parseInt(value.coin().to_str())
 
+    const utxos = await this.Nami.getUtxos()
+    const parsedUtxos = utxos.map((utxo) => this.S.TransactionUnspentOutput.from_bytes(Buffer.from(utxo, "hex")))
+
+    let countedValue = this.S.Value.new(this.S.BigNum.from_str("0"))
+    parsedUtxos.forEach(element => { countedValue = countedValue.checked_add(element.output().amount()) });
+    const minAda = this.S.min_ada_required(countedValue, this.S.BigNum.from_str(protocolParameter.minUtxo)); 
+
+    const availableAda = countedValue.coin().checked_sub(minAda); 
+    const lovelace = availableAda.to_str(); 
+    console.log("assets", protocolParameter.minUtxo)
     const assets = [];
     if (value.multiasset()) {
         const multiAssets = value.multiasset().keys();
