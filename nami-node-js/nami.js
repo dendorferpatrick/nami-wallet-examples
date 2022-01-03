@@ -2,7 +2,7 @@ var S = require('@emurgo/cardano-serialization-lib-nodejs')
 var Buffer = require('buffer').Buffer;
 const fetchPromise = import('node-fetch').then(mod => mod.default)
 const fetch = (...args) => fetchPromise.then(fetch => fetch(...args))
-
+; 
 
 const ERROR = {
     FAILED_PROTOCOL_PARAMETER: 'Couldnt fetch protocol parameters from blockfrost',
@@ -107,21 +107,22 @@ class NamiWalletApi {
 
 
 
-    async decodeTransaction(transactionHex) {
+    async decodeTransaction(transactionHex, networkId ) {
 
         const recipients = {}
 
         const transaction = S.Transaction.from_bytes(Buffer.from(transactionHex, "hex"));
-
+       
         const transaction_body = transaction.body()
         // get outputs 
         transaction_body.inputs().len
         const outputs = transaction_body.outputs()
+      
         // get inputs
         const inputs = transaction_body.inputs()
 
         // check number of outputs
-        let sender = {}
+        let txInputs = {}
         for (let inputIndex of [...Array(inputs.len()).keys()]) {
             const input = inputs.get(inputIndex);
             const txIndex = input.index()
@@ -133,15 +134,15 @@ class NamiWalletApi {
 
             const tx = await this._blockfrostRequest({
                 endpoint: `/txs/${txHash}/utxos`,
-                networkId: 0,
+                networkId: networkId,
                 method: "GET"
             });
 
             const txInput = tx.outputs.filter((row) => row.output_index == txIndex)[0]
 
           
-            if (typeof sender[txInput.address] == "undefined") {
-                sender[txInput.address] = {
+            if (typeof txInputs[txInput.address] == "undefined") {
+                txInputs[txInput.address] = {
                     amount: 0,
                     assets: {}
                 }
@@ -150,16 +151,16 @@ class NamiWalletApi {
                
                 
                 if (amount.unit == "lovelace") {
-                    sender[txInput.address].amount += parseInt(amount.quantity)
+                    txInputs[txInput.address].amount += parseInt(amount.quantity)
                 } else {
                     let unit = amount.unit.slice(0, 56) + "." + HexToAscii(amount.unit.slice(56))
-                    if (typeof sender[txInput.address].assets[unit] == "undefined") {
+                    if (typeof txInputs[txInput.address].assets[unit] == "undefined") {
 
 
-                        sender[txInput.address].assets[unit] = 0
+                        txInputs[txInput.address].assets[unit] = 0
                     }
                     
-                    sender[txInput.address].assets[unit] = sender[txInput.address].assets[unit] + parseInt(amount.quantity)
+                    txInputs[txInput.address].assets[unit] = txInputs[txInput.address].assets[unit] + parseInt(amount.quantity)
                  
                 }
                 
@@ -202,7 +203,7 @@ class NamiWalletApi {
         }
 
         const auxiliary_data = transaction.auxiliary_data()
-        console.log("Auxilary data", auxiliary_data,  auxiliary_data.metadata())
+        
         const _metadata = auxiliary_data.metadata()
         let metadata = {}
         if (_metadata){
@@ -220,19 +221,19 @@ class NamiWalletApi {
         
         
        
-        Object.keys(sender).map((senderAddress) => {
+        Object.keys(txInputs).map((senderAddress) => {
             if (recipients[senderAddress] != "undefined") {
-                sender[senderAddress].amount -= recipients[senderAddress].amount;
+                txInputs[senderAddress].amount -= recipients[senderAddress].amount;
                 recipients[senderAddress].amount = 0;
             
 
                 Object.entries(recipients[senderAddress].assets).forEach(([unit, quantity]) => {
-                    console.log("SENDER ", sender, unit, quantity)
-                    if (typeof sender[senderAddress].assets[unit] != "undefined") {
-                        sender[senderAddress].assets[unit] -= quantity;
+                    
+                    if (typeof txInputs[senderAddress].assets[unit] != "undefined") {
+                        txInputs[senderAddress].assets[unit] -= quantity;
                         recipients[senderAddress].assets[unit] = 0;
                         delete recipients[senderAddress].assets[unit];
-                        if (sender[senderAddress].assets[unit] == 0) delete sender[senderAddress].assets[unit]
+                        if (txInputs[senderAddress].assets[unit] == 0) delete txInputs[senderAddress].assets[unit]
                     }
 
                 })
@@ -249,22 +250,22 @@ class NamiWalletApi {
                 ...recipients[key]
             })
         })
-        const senderFinal = Object.keys(sender).map((key) => {
+        const txInputsFinal = Object.keys(txInputs).map((key) => {
             return {
                 address: key,
-                ...sender[key]
+                ...txInputs[key]
             }
         })
         
         for (let r of recipientsFinal) {
             outputValue += r.amount
         }
-        for (let s of senderFinal) {
+        for (let s of txInputsFinal) {
             inputValue += s.amount
         }
         const fee = inputValue - outputValue
 
-        return [senderFinal, recipientsFinal, metadata, fee]
+        return [txInputsFinal, recipientsFinal, metadata, fee]
     }
 
     async transaction({
@@ -897,7 +898,7 @@ class NamiWalletApi {
             20 + totalAssets,
             
         )
-        console.log(selection)
+        
         const inputs = selection.input;
         const txBuilder = this.S.TransactionBuilder.new(
             this.S.LinearFee.new(
@@ -1080,7 +1081,7 @@ class NamiWalletApi {
             'https://cardano-testnet.blockfrost.io/api/v0' :
             'https://cardano-mainnet.blockfrost.io/api/v0'
         let blockfrostApiKey = this.getApiKey(networkId)
-        console.log(body, endpoint, networkId, headers, method)
+        
         try {
             return await (await fetch(`${networkEndpoint}${endpoint}`, {
                 headers: {
