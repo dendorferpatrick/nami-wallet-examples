@@ -1,6 +1,6 @@
 {
-  "name": "nami-js",
-  "version": "2.0.0",
+  "name": "nami-node-js",
+  "version": "1.0.0",
   "description": "",
   "main": "nami.js",
   "scripts": {
@@ -9,9 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@emurgo/cardano-serialization-lib-browser": "^9.1.2",
-    "buffer": "^6.0.3", 
-    "react-datetime-picker": "^3.4.3"
+    "@emurgo/cardano-serialization-lib-nodejs": "^9.1.2",
+    "buffer": "^6.0.3"
+
 
   }
 }
