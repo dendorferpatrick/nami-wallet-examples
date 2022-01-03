@@ -10,8 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@emurgo/cardano-serialization-lib-browser": "^9.1.2",
-    "buffer": "^6.0.3", 
+    "buffer": "^6.0.3",
     "react-datetime-picker": "^3.4.3"
-
   }
 }

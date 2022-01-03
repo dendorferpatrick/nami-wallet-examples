@@ -18,7 +18,7 @@ export default function App() {
     const [recipientAddress, setRecipientAddress] = useState("addr_test1qqsjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscs57k2ql")
     const [witnesses, setWitnesses] = useState()
     const [policy, setPolicy] = useState()
-    
+    const [builtTransaction, setBuiltTransaction] = useState() 
 
     const [complextxHash, setComplextxHash] = useState()
     const [policyExpiration, setPolicyExpiration] = useState(new Date());
@@ -128,7 +128,7 @@ export default function App() {
             ttl: 3600,
             multiSig: null
         })
-        
+        setBuiltTransaction(t)
         const signature = await nami.signTx(t)
         console.log(t, signature, netId.id)
         const txHash = await nami.submitTx({
@@ -346,12 +346,18 @@ export default function App() {
 
                         <div className="item address"><p> Recipients Input</p><textarea style={{ width: "400px", height: "500px", }}
                             value={JSON.stringify(complexTransaction)}
-                            onChange={(event) => {setComplexTransaction((prevState) =>( {...JSON.parse(event.target.value)}))}} /></div>
+                            onChange={(event) => 
+                            {setComplexTransaction((prevState) =>( {...JSON.parse(event.target.value)}))}} />
+                            </div>
 
                       
 
-                    </div>
+                   
+                    <div className="item address"><p>Transaction Hash: </p> <textarea style={{ width: "400px", height: "500px", }} 
+                    value={builtTransaction} />
 
+                    </div>
+                    </div>
 
 
 
