@@ -10,8 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@emurgo/cardano-serialization-lib-nodejs": "^9.1.2",
-    "buffer": "^6.0.3"
-
-
+    "buffer": "^6.0.3",
+    "node-fetch": "^3.0.0"
   }
 }
