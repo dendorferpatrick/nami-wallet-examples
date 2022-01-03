@@ -26,7 +26,8 @@ export default blockfrostApiKey;
 ## Getting started Functionalities
 Import Nami Wallet
 ```js
-var NamiWalletApi = require('./nami').NamiWalletApi
+
+
 
 let blockfrostApiKey = {
                         0: "yourBlockfrostTestnetApiKey", // testnet

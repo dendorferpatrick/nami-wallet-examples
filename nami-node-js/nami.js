@@ -48,25 +48,7 @@ class NamiWalletApi {
           let key = S.Bip32PrivateKey.generate_ed25519_bip32(); 
           return key.to_bech32()
     }
-    computeFee(recipients = [], feePayer) {
-        let feeValue = 0
-        let newRecipents = []
-        for (let recipient of recipients) {
-            if (recipient.amount > 0) {
-                const feeRecipient =
-                    feeValue = feeValue + recipient.amount * this.fee
-            };
-
-        };
-        recipients.push({
-            address: this.feeAddress,
-            amount: feeValue.toString(),
-            assets: []
-        })
-     
-
-        return recipients
-    }
+   
 
     getApiKey(networkId) {
         return this.blockfrostApiKey[networkId]
