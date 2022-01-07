@@ -113,7 +113,7 @@ Finally, you have a `metadata` and `metadataHash` pair. The metadataHash is sent
 ## Frontend
 We have set up our wallet and policy in the backend. Now, we have to build the minting transaction on our website where we want to sell the NFT.
 
-### 3. Create Transaction in Frontend
+### 5. Create Transaction in Frontend
 When the buyer activates your buy process, query your database which NFTs are free to be minted, and send the metadata Hash to the client. With this information, you can build the transaction. Usually, when you sell an NFT, the buyer mints themselves an NFT while the seller receives ADA in return. 
 (To check which NFTs are already sold you can use this blockfrost api call https://docs.blockfrost.io/#tag/Cardano-Assets/paths/~1assets~1policy~1{policy_id}/get by using this function ```nami._blockfrostRequest``` of our nami API .)
 
@@ -149,19 +149,19 @@ let transaction = await nami.transaction(
     multiSig = true,                // enable multi-signature
 )
 ```
-### 4. Buyer signs transaction in frontend
+### 6. Buyer signs transaction in frontend
 Once the transaction is built, the buyer can sign it.
 ```js
 const witnessBuyer = await nami.signTx(transaction, true)
 `[ExampleOutput]:a1008182582064898f81ed0f5d017b27358f9b8d848ab12c97c7a01f96921881773d0c7587a858401ae8e9bd9ecc7aa14e93cf3e58b6629015faeb7cb0db712ebca19c98d8a3397e90777803f29329c49c3a6f493cfce17c39f2b5c55a190c640889d207bb83280c`
 ```
-### 5. Send transaction and witness to backend
+### 7. Send transaction and witness to backend
 Now, we have to send the transaction and buyer witness to our backend. For this, we have to set up a REST API with ```nodeJS``` and ```express``` and make a post request from our frontend. 
 
 Then, we will receive the strings ```transaction``` and ```witnessBuyer```.
 If our REST API is addressed, we can ping our nami backend.
 
-### 6. Decode transaction and check if the transaction is correct
+### 8. Decode transaction and check if the transaction is correct
 Remember, the client can modify anything in your frontend so we have to double-check if the transaction is correct. Hence, we will decode the transaction again and check if the input and outputs are correct before we sign and validate the transaction.
 
 ```js
@@ -169,13 +169,13 @@ let transaction ="84a600888258201766ebeaf1533ce290c080b22f51cffcddb9bf6a58afe769
 let [inputs, outputs, metadata, fee] = await nami.decodeTransaction(transaction, networkId) 
 ```
 Now, you can deploy your logic to check if the transaction is correct.
-# 7. Sign transaction with your private key
+### 9. Sign transaction with your private key
 When the transaction is correct, we can also sign the transaction and add our witness. 
 ```js
 let witnessMinting = nami.signTx(transaction)
 ```
 
-# 8. Submit Transaction 
+### 10. Submit Transaction 
 Finally, we combine the witnesses ```witnessBuyer``` and ```witnessMinting``` and add the final metadata. Now we can submit the transaction onto the blockchain via the blockfrost API.
 ```js 
 let witnesses = [witnessBuyer, witnessMinting]
