@@ -160,7 +160,8 @@ Hash Metadata (needed for multi-signature minting)
 nami.hashMetadata(metadata)
 ```
     
-
+## Vending NFTs with multi-signature approach
+If you want to sell your NFTs with a multi-signature approach, have a look here [Multi-Signature.md](./Multi-Signature.md)
 ## Feature Requests
 If you want to see any additional functionalities you can leave a feature request. We are going to expand this repository over time and react to your feedback.
 
