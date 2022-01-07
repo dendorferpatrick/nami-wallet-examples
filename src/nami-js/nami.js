@@ -3,6 +3,7 @@ import CoinSelection from "./coinSelection";
 import { Buffer } from "buffer";
 import AssetFingerprint from '@emurgo/cip14-js';
 
+
 export async function Cardano() {
     await Loader.load();
     return Loader.Cardano;
@@ -197,6 +198,8 @@ class NamiWalletApi {
         PaymentAddress = "",
         recipients = [],
         metadata = null,
+        metadataHash = null, 
+        addMetadata = true, 
         utxosRaw = [],
         networkId = 0,
         ttl = 3600, 
@@ -304,6 +307,8 @@ class NamiWalletApi {
                 outputValues: outputValues,
                 ProtocolParameter: protocolParameter,
                 metadata: metadata,
+                metadataHash : metadataHash, 
+                addMetadata : addMetadata, 
                 multiSig: multiSig, 
                 ttl: ttl,
                 costValues: costValues
@@ -369,9 +374,9 @@ class NamiWalletApi {
     }
 
 
-    async signTx(transaction) {
+    async signTx(transaction, partialSign = false) {
         if (!this.isEnabled()) throw ERROR.NOT_CONNECTED;
-        return await this.Nami.signTx(transaction)
+        return await this.Nami.signTx(transaction, partialSign)
       }
     
     async signData(string) {
@@ -386,7 +391,28 @@ class NamiWalletApi {
         return coseSign1Hex
     }
 
+    hashMetadata(metadata){
+        let aux = this.S.AuxiliaryData.new()
+        
+        
+        const generalMetadata = this.S.GeneralTransactionMetadata.new();
+        Object.entries(metadata).map(([MetadataLabel, Metadata]) => {
+        
+        generalMetadata.insert(
+            this.S.BigNum.from_str(MetadataLabel),
+            this.S.encode_json_str_to_metadatum(JSON.stringify(Metadata), 0)
+        );
+        });
 
+        aux.set_metadata(generalMetadata)
+        
+        
+        
+
+    const metadataHash = this.S.hash_auxiliary_data(aux);
+    return Buffer.from(metadataHash.to_bytes(), "hex").toString("hex")
+
+    }
     //////////////////////////////////////////////////
 
     _makeMintedAssets(mintedAssets) {
@@ -518,6 +544,8 @@ class NamiWalletApi {
     
         outputValues = {},
         metadata = null,
+        metadataHash = null, 
+        addMetadata = true, 
         ttl = 3600,
         multiSig = false, 
         costValues = {}
@@ -682,13 +710,18 @@ class NamiWalletApi {
 
             aux.set_metadata(generalMetadata)
             
-            rawTxBody.set_auxiliary_data_hash(this.S.hash_auxiliary_data(aux));
+         
             
 
 
         }
-
-        rawTxBody.set_auxiliary_data_hash(this.S.hash_auxiliary_data(aux));
+        if (metadataHash) { 
+            const auxDataHash  = this.S.AuxiliaryDataHash.from_bytes(Buffer.from(metadataHash, "hex"))
+            console.log(auxDataHash)
+            rawTxBody.set_auxiliary_data_hash(auxDataHash);
+        }
+        else
+            rawTxBody.set_auxiliary_data_hash(this.S.hash_auxiliary_data(aux));
         const witnesses = this.S.TransactionWitnessSet.new();
         witnesses.set_native_scripts(nativeScripts);
 
@@ -756,16 +789,20 @@ class NamiWalletApi {
         );
 
         finalTxBody.set_mint(rawTxBody.multiassets());
-
+       
         finalTxBody.set_auxiliary_data_hash(rawTxBody.auxiliary_data_hash());
 
         const finalWitnesses = this.S.TransactionWitnessSet.new();
         finalWitnesses.set_native_scripts(nativeScripts);
-
+        let auxFinal; 
+        if (addMetadata)
+         auxFinal = rawTx.auxiliary_data()
+        else
+         auxFinal = this.S.AuxiliaryData.new()
         const transaction = this.S.Transaction.new(
             finalTxBody,
             finalWitnesses,
-            rawTx.auxiliary_data()
+            auxFinal
         );
 
         const size = transaction.to_bytes().length * 2;
@@ -924,7 +961,8 @@ class NamiWalletApi {
         transactionRaw,
         witnesses,
         scripts,
-        networkId
+        networkId, 
+        metadata
     }) {
 
         
@@ -969,11 +1007,28 @@ class NamiWalletApi {
         const totalWitnesses = this.S.TransactionWitnessSet.new();
         totalWitnesses.set_vkeys(totalVkeys);
         totalWitnesses.set_native_scripts(totalScripts);
+        let aux; 
+        if (metadata){
 
+
+        aux = this.S.AuxiliaryData.new()
+        const generalMetadata = this.S.GeneralTransactionMetadata.new();
+        Object.entries(metadata).map(([MetadataLabel, Metadata]) => {
+        
+        generalMetadata.insert(
+            this.S.BigNum.from_str(MetadataLabel),
+            this.S.encode_json_str_to_metadatum(JSON.stringify(Metadata), 0)
+        );
+        });
+
+        aux.set_metadata(generalMetadata)      
+        } else {
+            aux = transaction.auxiliary_data(); 
+        }
         const signedTx = await this.S.Transaction.new(
             transaction.body(),
             totalWitnesses,
-            transaction.auxiliary_data()
+            aux
         );
      
         const txhash = await this._blockfrostRequest({

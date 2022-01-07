@@ -41,7 +41,7 @@ const blockfrostApiKey = {
 export default blockfrostApiKey;
 ```
 
-## Getting started Functionalities
+## Getting started 
 Import Nami Wallet
 ```js
 import NamiWalletApi, { Cardano } from './nami-js';
@@ -102,7 +102,15 @@ async nami.getBalance () : {lovelave: <amountLovelace>, assets: <assetList>}
 ```
 Build transaction 
 ```js
-let transaction = await nami.transaction( PaymentAddress = "", recipients = [{address: "", amount: "0" ,assets:[],   mintedAssets: []}], metadata = null, utxosRaw = [], networkId = 0, ttl = 3600, multiSig = false) 
+let transaction = await nami.transaction( PaymentAddress = "", 
+recipients = [{address: "", amount: "0" ,assets:[],   mintedAssets: []}], 
+metadata = null, 
+metadataHash = null, 
+addMetadata = true, 
+utxosRaw = [],
+networkId = 0, 
+ttl = 3600, 
+multiSig = false) 
 
 
 // Example 
@@ -140,11 +148,16 @@ Create Minitng Policy
 ```js
 await nami.createLockingPolicyScript(address,  (await getNetworkId()).id , expirationTime)
 
-// example policy that expires in 90 miniutes from now
+// example policy that expires in 90 minutes from now
 const expirationTime = new Date();
 expirationTime.setTime(expirationTime.getTime() + (1 * 60 * 90 * 1000))
 
 let policy = await nami.createLockingPolicyScript(await nami.getHexAddress(), networkId , expirationTime)
+```
+
+Hash Metadata (needed for multi-signature minting)
+```js
+nami.hashMetadata(metadata)
 ```
     
 
