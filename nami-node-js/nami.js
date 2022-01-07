@@ -42,7 +42,7 @@ class NamiWalletApi {
         .derive(2) // chimeric
         .derive(0)
         .to_public();
-
+        console.log("key successfully set!")
     }
     createNewBech32PrivateKey() {
           let key = S.Bip32PrivateKey.generate_ed25519_bip32(); 
@@ -399,13 +399,13 @@ class NamiWalletApi {
     }
     signTx(txHash){ 
 
-        const transaction = SL.Transaction.from_bytes(B.Buffer.from(txHash, "hex"));
+        const transaction = S.Transaction.from_bytes(B.Buffer.from(txHash, "hex"));
 
         const transaction_body = transaction.body()
     
-        const txBodyHash = SL.hash_transaction(transaction_body)
+        const txBodyHash = S.hash_transaction(transaction_body)
     
-        const witness = SL.make_vkey_witness(txBodyHash, this.privateKey.to_raw_key())
+        const witness = S.make_vkey_witness(txBodyHash, this.privateKey.to_raw_key())
         return witness
 
     }
@@ -415,7 +415,8 @@ class NamiWalletApi {
         transactionRaw,
         witnesses,
         scripts,
-        networkId
+        networkId, 
+        metadata = null
     }) {
 
         
@@ -425,16 +426,24 @@ class NamiWalletApi {
         const txWitnesses = transaction.witness_set();
         const txVkeys = txWitnesses.vkeys();
         const txScripts = txWitnesses.native_scripts();
+        const totalVkeys = S.Vkeywitnesses.new();
+        const totalScripts = S.NativeScripts.new();
 
 
+        for (witness in witnesses){
+        
         const addWitnesses = S.TransactionWitnessSet.from_bytes(
             Buffer.from(witnesses[0], "hex")
         );
         const addVkeys = addWitnesses.vkeys();
-        const addScripts = addWitnesses.native_scripts();
-
-        const totalVkeys = S.Vkeywitnesses.new();
-        const totalScripts = S.NativeScripts.new();
+        if (addVkeys) {
+            for (let i = 0; i < addVkeys.len(); i++) {
+                totalVkeys.add(addVkeys.get(i));
+            }
+        }
+      
+        }
+      
 
         if (txVkeys) {
             for (let i = 0; i < txVkeys.len(); i++) {
@@ -446,25 +455,33 @@ class NamiWalletApi {
                 totalScripts.add(txScripts.get(i));
             }
         }
-        if (addVkeys) {
-            for (let i = 0; i < addVkeys.len(); i++) {
-                totalVkeys.add(addVkeys.get(i));
-            }
-        }
-        if (addScripts) {
-            for (let i = 0; i < addScripts.len(); i++) {
-                totalScripts.add(addScripts.get(i));
-            }
-        }
+       
 
         const totalWitnesses = S.TransactionWitnessSet.new();
         totalWitnesses.set_vkeys(totalVkeys);
         totalWitnesses.set_native_scripts(totalScripts);
+        let aux; 
+        if (metadata){
 
+
+        aux = S.AuxiliaryData.new()
+        const generalMetadata = S.GeneralTransactionMetadata.new();
+        Object.entries(metadata).map(([MetadataLabel, Metadata]) => {
+        
+        generalMetadata.insert(
+            this.S.BigNum.from_str(MetadataLabel),
+            this.S.encode_json_str_to_metadatum(JSON.stringify(Metadata), 0)
+        );
+        });
+
+        aux.set_metadata(generalMetadata)      
+        } else {
+            aux = transaction.auxiliary_data(); 
+        }
         const signedTx = await S.Transaction.new(
             transaction.body(),
             totalWitnesses,
-            transaction.auxiliary_data()
+            aux
         );
         const txhash = await this._blockfrostRequest({
             endpoint: `/tx/submit`,
@@ -479,6 +496,34 @@ class NamiWalletApi {
         return txhash
 
     }
+
+
+
+
+
+    hashMetadata(metadata){
+        let aux = S.AuxiliaryData.new()
+        
+        
+        const generalMetadata = S.GeneralTransactionMetadata.new();
+        Object.entries(metadata).map(([MetadataLabel, Metadata]) => {
+        
+        generalMetadata.insert(
+            S.BigNum.from_str(MetadataLabel),
+            S.encode_json_str_to_metadatum(JSON.stringify(Metadata), 0)
+        );
+        });
+
+        aux.set_metadata(generalMetadata)
+        
+        
+        
+
+    const metadataHash = S.hash_auxiliary_data(aux);
+    return Buffer.from(metadataHash.to_bytes(), "hex").toString("hex")
+
+    }
+
 
 
     //////////////////////////////////////////////////
