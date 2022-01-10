@@ -63,7 +63,7 @@ let networkId = 1 // mainnet
 // example policy that expires in 24hrs from now
 const expirationTime = new Date();
 expirationTime.setTime(expirationTime.getTime() + (24 * 60 * 60 * 1000))  // 24hrs in milliseconds
-let policy = nami.createLockingPolicyScript(networkId, expirationTime)
+let policy = await nami.createLockingPolicyScript(networkId, expirationTime)
 console.log(policy)
 '[ExampleOutput]:
 Promise {
