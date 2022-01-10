@@ -58,14 +58,13 @@ class NamiWalletApi {
  
 
     async createLockingPolicyScript( networkId, expirationTime) {
-        // var now = new Date()
+        var now = new Date()
 
         const protocolParameters = await this._getProtocolParameter(networkId);
         
         const slot = parseInt(protocolParameters.slot);
-        // const duration = expirationTime.getTime() - now.getTime()
+        const duration = parseInt((expirationTime.getTime() - now.getTime())/1000)
 
-        const duration = 1000; 
         const ttl = slot + duration;
 
         const baseAddr = S.BaseAddress.new(
