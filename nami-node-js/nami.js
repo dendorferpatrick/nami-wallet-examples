@@ -398,7 +398,7 @@ class NamiWalletApi {
     }
     signTx(txHash){ 
 
-        const transaction = S.Transaction.from_bytes(B.Buffer.from(txHash, "hex"));
+        const transaction = S.Transaction.from_bytes(Buffer.from(txHash, "hex"));
 
         const transaction_body = transaction.body()
     
