@@ -405,7 +405,12 @@ class NamiWalletApi {
         const txBodyHash = S.hash_transaction(transaction_body)
     
         const witness = S.make_vkey_witness(txBodyHash, this.privateKey.to_raw_key())
-        return witness
+        const witnessSet = S.TransactionWitnessSet.new()
+        const vKeys = S.Vkeywitnesses.new();
+        vKeys.add(witness);
+        witnessSet.set_vkeys(vKeys);
+
+        return Buffer.from(witnessSet.to_bytes(), "hex").toString("hex")
 
     }
    
@@ -429,10 +434,10 @@ class NamiWalletApi {
         const totalScripts = S.NativeScripts.new();
 
 
-        for (let witness in witnesses){
-        
+        for (let witness of witnesses){
+        console.log(witness)
         const addWitnesses = S.TransactionWitnessSet.from_bytes(
-            Buffer.from(witnesses[0], "hex")
+            Buffer.from(witness, "hex")
         );
         const addVkeys = addWitnesses.vkeys();
         if (addVkeys) {
