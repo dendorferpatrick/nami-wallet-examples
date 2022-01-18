@@ -432,7 +432,7 @@ class NamiWalletApi {
         for (let witness in witnesses){
         
         const addWitnesses = S.TransactionWitnessSet.from_bytes(
-            Buffer.from(witnesses[0], "hex")
+            Buffer.from(witness, "hex")
         );
         const addVkeys = addWitnesses.vkeys();
         if (addVkeys) {
