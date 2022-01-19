@@ -19,7 +19,7 @@ class NamiWalletApi {
         this.blockfrostApiKey = blockfrostApiKey; 
         this.privateKey = null; 
         this.accountKey = null; 
-        this.utxoPubKey = null; 
+        this.paymentKey = null; 
         this.stakeKey = null; 
     }
 
