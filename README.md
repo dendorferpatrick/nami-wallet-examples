@@ -10,7 +10,7 @@ Nami Wallet is a browser-based wallet extension to interact with the Cardano blo
 
 You can download the wallet for different browsers here ([https://namiwallet.io](https://namiwallet.io/))
 
-
+If you find this repository useful and want to support us, you can donate ADA to this wallet ```addr1qysjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscshgt2vq```. 
 ## Setup
 To run the application locally these installation steps:
 ```
