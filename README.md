@@ -167,5 +167,7 @@ If you want to see any additional functionalities you can leave a feature reques
 
 ## Support 
 If you find this repository helpful, please follow me on twitter [https://twitter.com/CardanoFanB](https://twitter.com/CardanoFanB) and have a look at our projects NFT Project [https://partyanimals.dance](https://partyanimals.dance/) and 
-[https://cfanboyminter.web.app/](https://cfanboyminter.web.app/). Thank you for you support!
+[https://cfanboyminter.web.app/](https://cfanboyminter.web.app/). 
+If you like you can donate ADA to this wallet ```addr1qysjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscshgt2vq```. 
+Thank you for you support!
 
