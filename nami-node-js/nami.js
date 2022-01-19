@@ -33,15 +33,15 @@ class NamiWalletApi {
         .derive(harden(1815)) // coin type
         .derive(harden(0)); // account #0
 
-        this.utxoPubKey = this.accountKey
+        this.paymentKey = this.accountKey
         .derive(0) // external
         .derive(0)
-        .to_public();
+       ;
 
         this.stakeKey = this.accountKey
         .derive(2) // chimeric
-        .derive(0)
-        .to_public();
+        .derive(0)   
+        ;
         console.log("key successfully set!")
     }
     createNewBech32PrivateKey() {
@@ -421,7 +421,7 @@ class NamiWalletApi {
     
         const txBodyHash = S.hash_transaction(transaction_body)
     
-        const witness = S.make_vkey_witness(txBodyHash, this.privateKey.to_raw_key())
+        const witness = S.make_vkey_witness(txBodyHash, this.paymentKey.to_raw_key())
         const witnessSet = S.TransactionWitnessSet.new()
         const vKeys = S.Vkeywitnesses.new();
         vKeys.add(witness);
