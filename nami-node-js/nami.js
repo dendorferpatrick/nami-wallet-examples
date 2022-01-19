@@ -66,12 +66,29 @@ class NamiWalletApi {
         const duration = parseInt((expirationTime.getTime() - now.getTime())/1000)
 
         const ttl = slot + duration;
+        publicKey = self.privateKey
+        .derive(harden(1852)) // purpose
+        .derive(harden(1815)) // coin type;
+        .derive(harden(0))
+        .to_public();
+        
 
-        const baseAddr = S.BaseAddress.new(
+        
+        const paymentKeyHashRaw = publicKey.derive(0).derive(0).to_raw_key().hash();
+        const stakeKeyHashRaw = publicKey.derive(2).derive(0).to_raw_key().hash();
+    
+    
+         const baseAddr = S.BaseAddress.new(
             networkId,
-            S.StakeCredential.from_keyhash(this.utxoPubKey.to_raw_key().hash()),
-            S.StakeCredential.from_keyhash(this.stakeKey.to_raw_key().hash()),
-          );
+            S.StakeCredential.from_keyhash(paymentKeyHashRaw),
+            S.StakeCredential.from_keyhash(stakeKeyHashRaw)
+            )
+            .to_address();
+        // const baseAddr = S.BaseAddress.new(
+        //     networkId,
+        //     S.StakeCredential.from_keyhash(this.utxoPubKey.to_raw_key().hash()),
+        //     S.StakeCredential.from_keyhash(this.stakeKey.to_raw_key().hash()),
+        //   );
           
         const paymentKeyHash = baseAddr
             .payment_cred()
