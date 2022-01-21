@@ -35,32 +35,56 @@ export default function App() {
     }, [])
     useEffect(() => {
         async function t() {
-
             const S = await Cardano();
-            nami = new NamiWalletApi(
-                S,
-                window.cardano,
-               blockfrostApiKey
-            )
+            const walletName = localStorage.getItem('wallet_name')
 
+            setTimeout(async () => {
+                if(typeof window.cardano[walletName] !== undefined) {
+                    wallet = new Wallet(window.cardano[walletName])
+                    if (await wallet.isInstalled()) {
+                        await wallet.isEnabled().then(async result => {
+                            setConnected(result)
 
-            if (await nami.isInstalled()) {
-                await nami.isEnabled().then(result => { setConnected(result) })
+                            let walletInnerApi = await wallet.enable()
 
-            }
+                            walletAPI = new WalletApi(
+                                S,
+                                wallet,
+                                walletInnerApi,
+                                Config.blockfrostApiKey
+                            )
+                        })
+                    }
+                }
+            }, 3000) // timout required because ccvault take a few seconds to inject api
         }
 
-        t()
+        const isWalletEnabled = localStorage.getItem('wallet_enabled')
+        const walletName = localStorage.getItem('wallet_name')
+        if(isWalletEnabled && walletName !== null) {
+            t()
+        }
     }, [])
-
-
-
    
     const connect = async () => {
         // Connects nami wallet to current website 
-        await nami.enable()
-            .then(result => setConnected(result))
-            .catch(e => console.log(e))
+        const S = await Cardano();
+
+        if(typeof window.cardano[walletName] !== undefined) {
+            wallet = new Wallet(window.cardano[walletName])
+            let walletInnerApi = await wallet.enable()
+
+            setConnected(true)
+
+            walletAPI = new WalletApi(
+                S,
+                wallet,
+                walletInnerApi,
+                Config.blockfrostApiKey
+            )
+        } else {
+            console.error(`You do not have the selected wallet installed.`)
+        }
     }
 
     const getAddress = async () => {
