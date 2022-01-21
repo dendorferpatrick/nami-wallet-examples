@@ -4,8 +4,9 @@ import './App.css';
 
 import NamiWalletApi, { Cardano } from './nami-js';
 import blockfrostApiKey from '../config.js'; 
-let nami;
 
+let wallet;
+let walletAPI;
 
 export default function App() {
     const [connected, setConnected] = useState()
@@ -105,7 +106,7 @@ export default function App() {
         if (!connected) {
             await connect()
         }
-        await nami.getAddress().then((newAddress) => { console.log(newAddress); setAddress(newAddress) })
+        await walletInnerApi.getAddress().then((newAddress) => { console.log(newAddress); setAddress(newAddress) })
     }
 
 
@@ -113,7 +114,7 @@ export default function App() {
         if (!connected) {
             await connect()
         }
-        await nami.getBalance().then(result => { console.log(result); setNfts(result.assets); setBalance(result.lovelace) })
+        await walletInnerApi.getBalance().then(result => { console.log(result); setNfts(result.assets); setBalance(result.lovelace) })
     }
 
 
@@ -123,11 +124,11 @@ export default function App() {
         }
 
         const recipients = [{ "address": recipientAddress, "amount": amount }]
-        let utxos = await nami.getUtxosHex();
-        const myAddress = await nami.getAddress();
+        let utxos = await walletInnerApi.getUtxosHex();
+        const myAddress = await walletInnerApi.getAddress();
         
-        let netId = await nami.getNetworkId();
-        const t = await nami.transaction({
+        let netId = await walletInnerApi.getNetworkId();
+        const t = await walletInnerApi.transaction({
             PaymentAddress: myAddress,
             recipients: recipients,
             metadata: null,
@@ -149,13 +150,13 @@ export default function App() {
             const recipients = complexTransaction.recipients
             const metadataTransaction = complexTransaction.metadata
             console.log(metadataTransaction)
-            let utxos = await nami.getUtxosHex();
+            let utxos = await walletInnerApi.getUtxosHex();
             
-            const myAddress = await nami.getAddress();
+            const myAddress = await walletInnerApi.getAddress();
             console.log(myAddress)
-            let netId = await nami.getNetworkId();
+            let netId = await walletInnerApi.getNetworkId();
 
-            const t = await nami.transaction({
+            const t = await walletInnerApi.transaction({
                 PaymentAddress: myAddress,
                 recipients: recipients,
                 metadata: metadataTransaction,
@@ -166,9 +167,9 @@ export default function App() {
             })
 
             setBuiltTransaction(t)
-            const signature = await nami.signTx(t)
+            const signature = await walletInnerApi.signTx(t)
             console.log(t, signature, netId.id)
-            const txHash = await nami.submitTx({
+            const txHash = await walletInnerApi.submitTx({
                 transactionRaw: t,
                 witnesses: [signature],
 
@@ -186,13 +187,13 @@ export default function App() {
             await connect()
         }
 
-        const witnesses = await nami.signTx(transaction)
+        const witnesses = await walletInnerApi.signTx(transaction)
         setWitnesses(witnesses)
     }
 
     const submitTransaction = async () => {
-        let netId = await nami.getNetworkId();
-        const txHash = await nami.submitTx({
+        let netId = await walletInnerApi.getNetworkId();
+        const txHash = await walletInnerApi.submitTx({
             transactionRaw: transaction,
             witnesses: [witnesses],
 
@@ -204,12 +205,12 @@ export default function App() {
     const createPolicy = async () => {
         console.log(policyExpiration)
         try {
-            await nami.enable()
+            walletInnerApi = await wallet.enable()
             
-            const myAddress = await nami.getHexAddress();
+            const myAddress = await walletInnerApi.getHexAddress();
             
-            let networkId = await nami.getNetworkId()
-            const newPolicy = await nami.createLockingPolicyScript(myAddress, networkId.id, policyExpiration)
+            let networkId = await walletInnerApi.getNetworkId()
+            const newPolicy = await walletInnerApi.createLockingPolicyScript(myAddress, networkId.id, policyExpiration)
 
             setPolicy(newPolicy)
             setComplexTransaction((prevState) => {
@@ -366,7 +367,3 @@ export default function App() {
     </>
     )
 }
-
-
-
-    
