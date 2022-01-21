@@ -64,7 +64,7 @@ export default function App() {
                                 S,
                                 wallet,
                                 walletInnerApi,
-                                Config.blockfrostApiKey
+                                blockfrostApiKey
                             )
                         })
                     }
@@ -93,7 +93,7 @@ export default function App() {
                 S,
                 wallet,
                 walletInnerApi,
-                Config.blockfrostApiKey
+                blockfrostApiKey
             )
         } else {
             console.error(`You do not have the selected wallet installed.`)
