@@ -22,10 +22,22 @@ export default function App() {
 
     const [complextxHash, setComplextxHash] = useState()
     const [policyExpiration, setPolicyExpiration] = useState(new Date());
-    const [complexTransaction, setComplexTransaction] = useState({recipients: [{address:"addr_test1qqsjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscs57k2ql", 
-        amount: "3", 
-        mintedAssets:[{assetName: "MyNFT", quantity:'1',  policyId: "Example PolicyID", 
-        policyScript:"ExamplePolicy"}] }]})
+    const [complexTransaction, setComplexTransaction] = useState({
+        recipients: [
+            {
+                address:"addr_test1qqsjrwqv6uyu7gtwtzvhjceauj8axmrhssqf3cvxangadqzt5f4xjh3za5jug5rw9uykv2klc5c66uzahu65vajvfscs57k2ql",
+                amount: "3",
+                mintedAssets:[
+                    {
+                        assetName: "MyNFT",
+                        quantity:'1', 
+                        policyId: "Example PolicyID",
+                        policyScript:"ExamplePolicy"
+                    }
+                ]
+            }
+        ]
+    })
 
     useEffect(() => {
         const defaultDate = new Date();
@@ -33,6 +45,7 @@ export default function App() {
         setPolicyExpiration(defaultDate);
 
     }, [])
+
     useEffect(() => {
         async function t() {
             const S = await Cardano();
@@ -66,7 +79,7 @@ export default function App() {
         }
     }, [])
    
-    const connect = async () => {
+    const connect = async (walletName) => {
         // Connects nami wallet to current website 
         const S = await Cardano();
 
@@ -126,49 +139,47 @@ export default function App() {
         console.log(t)
         setTransaction(t)
     }
-
-
-
+    
     const buildFullTransaction = async () => {
         if (!connected) {
             await connect()
         }
+
         try {
-        const recipients = complexTransaction.recipients
-        const metadataTransaction = complexTransaction.metadata
-        console.log(metadataTransaction)
-        let utxos = await nami.getUtxosHex();
-        
-        const myAddress = await nami.getAddress();
-        console.log(myAddress)
-        let netId = await nami.getNetworkId();
+            const recipients = complexTransaction.recipients
+            const metadataTransaction = complexTransaction.metadata
+            console.log(metadataTransaction)
+            let utxos = await nami.getUtxosHex();
+            
+            const myAddress = await nami.getAddress();
+            console.log(myAddress)
+            let netId = await nami.getNetworkId();
 
-        const t = await nami.transaction({
-            PaymentAddress: myAddress,
-            recipients: recipients,
-            metadata: metadataTransaction,
-            utxosRaw: utxos,
-            networkId: netId.id,
-            ttl: 3600,
-            multiSig: null
-        })
-        setBuiltTransaction(t)
-        const signature = await nami.signTx(t)
-        console.log(t, signature, netId.id)
-        const txHash = await nami.submitTx({
-            transactionRaw: t,
-            witnesses: [signature],
+            const t = await nami.transaction({
+                PaymentAddress: myAddress,
+                recipients: recipients,
+                metadata: metadataTransaction,
+                utxosRaw: utxos,
+                networkId: netId.id,
+                ttl: 3600,
+                multiSig: null
+            })
 
-            networkId: netId.id
-        })
-        console.log(txHash)
-        setComplextxHash(txHash)
-    } catch (e){
-        console.log(e)
+            setBuiltTransaction(t)
+            const signature = await nami.signTx(t)
+            console.log(t, signature, netId.id)
+            const txHash = await nami.submitTx({
+                transactionRaw: t,
+                witnesses: [signature],
+
+                networkId: netId.id
+            })
+            console.log(txHash)
+            setComplextxHash(txHash)
+        } catch (e){
+            console.log(e)
+        }
     }
-    }
-
-
     
     const signTransaction = async () => {
         if (!connected) {
@@ -188,32 +199,40 @@ export default function App() {
             networkId: netId.id
         })
         setTxHash(txHash)
-
     }
 
     const createPolicy = async () => {
         console.log(policyExpiration)
         try {
             await nami.enable()
-
-
+            
             const myAddress = await nami.getHexAddress();
             
             let networkId = await nami.getNetworkId()
             const newPolicy = await nami.createLockingPolicyScript(myAddress, networkId.id, policyExpiration)
 
             setPolicy(newPolicy)
-            setComplexTransaction((prevState) => 
-            {const state = prevState;   state.recipients[0].mintedAssets[0].policyId = newPolicy.id; 
+            setComplexTransaction((prevState) => {
+                const state = prevState;
+                state.recipients[0].mintedAssets[0].policyId = newPolicy.id; 
                 state.recipients[0].mintedAssets[0].policyScript = newPolicy.script; 
-                state.metadata = {"721": {[newPolicy.id]: 
-                    {[state.recipients[0].mintedAssets[0].assetName]: {name: "MyNFT", description: "Test NFT", image: "ipfs://QmUb8fW7qm1zCLhiKLcFH9yTCZ3hpsuKdkTgKmC8iFhxV8"}} }};
-                 return {...state}})
-
+                state.metadata = {
+                    "721": {
+                        [newPolicy.id]: {
+                            [state.recipients[0].mintedAssets[0].assetName]: {
+                                name: "MyNFT",
+                                description: "Test NFT",
+                                image: "ipfs://QmUb8fW7qm1zCLhiKLcFH9yTCZ3hpsuKdkTgKmC8iFhxV8"
+                            }
+                        }
+                    }
+                };
+                
+                return {...state}
+            })
         } catch (e) {
             console.log(e)
         }
-
     }
 
     return (<>
@@ -226,7 +245,7 @@ export default function App() {
                     <h1> 1. Connect your website to Nami Wallet</h1>
                 </div>
                 <div className="row" >
-                    <button className={`button ${connected ? "success" : ""}`} onClick={connect} > {connected ? "Connected" : "Connect to Nami"} </button>
+                    <button className={`button ${connected ? "success" : ""}`} onClick={() => connect('nami')} > {connected ? "Connected" : "Connect to Nami"} </button>
                 </div>
                 <div className="row" >
                     <h1> 2. Retrieve your Nami wallet address</h1>
@@ -268,10 +287,7 @@ export default function App() {
                 </div>
                 <div className="row" >
                     <button className={`button ${(transaction) ? "success" : ""}`} onClick={() => { if (amount && recipientAddress) buildTransaction() }}> Build Transaction</button>
-                    <div className="column" >
-
-
-
+                    <div className="column">
                         <div className="item address"><p> Amount</p><input style={{ width: "400px", height: "30px", }}
                             value={amount}
                             onChange={(event) => setAmount(event.target.value.toString())} /></div>
@@ -280,12 +296,7 @@ export default function App() {
                             <input style={{ width: "400px", height: "30px" }}
                                 value={recipientAddress}
                                 onChange={(event) => setRecipientAddress(event.target.value.toString())} /></div>
-
                     </div>
-
-
-
-
                 </div>
 
                 <div className="row" >
@@ -293,14 +304,7 @@ export default function App() {
                 </div>
                 <div className="row" >
                     <button className={`button ${(witnesses) ? "success" : ""}`} onClick={() => { if (transaction) signTransaction() }}> Sign Transaction</button>
-                    <div className="column" >
-
-
-
-
-
-
-                    </div>
+                    <div className="column"></div>
                 </div>
                 <div className="row" >
                     <h1> 6. Submit Transaction</h1>
@@ -312,11 +316,6 @@ export default function App() {
                         <div className="item address">
                             <p>TxHash:  {txHash} </p>
                         </div>
-
-
-
-
-
                     </div>
 
                 </div>
@@ -328,66 +327,40 @@ export default function App() {
 
                     <div className="column" >
                     <p>Set Policy Expriaton Date: <DateTimePicker
-                               
                                onChange={setPolicyExpiration}
                                value={policyExpiration}
                                minDate={new Date()}
                            />
                            </p>
                         <div className="item address">
-                        
                             <p>policyId:  {policy?.id} </p>
                             <p>policyScript:  {policy?.script} </p>
                             <p>paymentKeyHash:  {policy?.paymentKeyHash} </p>
                             <p>ttl:  {policy?.ttl} </p>
                         </div>
-
-
-
-
-
                     </div>
-
                 </div>
-
-
-
             </div>
-
-            
-
                 <div className="row" >
                     <h1> 8. Build Full Transaction (incl. Minting)</h1>
                 </div>
                 <div className="row" >
                     <button className={`button ${(complextxHash) ? "success" : ""}`} onClick={ buildFullTransaction}> Build Transaction</button>
-                    <div className="column" >
-
-
-                    <div className="item address">
-                            <p>Complex TxHash:  {complextxHash} </p>
-                        </div>
-
-                        <div className="item address"><p> Recipients Input</p><textarea style={{ width: "400px", height: "500px", }}
-                            value={JSON.stringify(complexTransaction)}
-                            onChange={(event) => 
-                            {setComplexTransaction((prevState) =>( {...JSON.parse(event.target.value)}))}} />
+                    <div className="column">
+                        <div className="item address">
+                                <p>Complex TxHash:  {complextxHash} </p>
                             </div>
 
-                      
-
-                   
-                    <div className="item address"><p>Transaction Hash: </p> <textarea style={{ width: "400px", height: "500px", }} 
-                    value={builtTransaction} />
-
+                            <div className="item address"><p> Recipients Input</p><textarea style={{ width: "400px", height: "500px", }}
+                                value={JSON.stringify(complexTransaction)}
+                                onChange={(event) => 
+                                {setComplexTransaction((prevState) =>( {...JSON.parse(event.target.value)}))}} />
+                            </div>
+                        <div className="item address">
+                            <p>Transaction Hash: </p> <textarea style={{ width: "400px", height: "500px", }} value={builtTransaction} />
+                        </div>
                     </div>
-                    </div>
-
-
-
                 </div>
-            
-            
         </div>
 
     </>
