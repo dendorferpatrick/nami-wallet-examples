@@ -96,6 +96,9 @@ export default function App() {
                 walletInnerApi,
                 blockfrostApiKey
             )
+
+            localStorage.setItem('wallet_enabled', true)
+            localStorage.setItem('wallet_name', walletName)
         } else {
             console.error(`You do not have the selected wallet installed.`)
         }
