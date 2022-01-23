@@ -144,7 +144,7 @@ let txHash = await nami.submitTx( {transactionRaw: transaction,
 console.log(txHash)
 ```
 
-Create Minitng Policy
+Create Minting Policy
 ```js
 await nami.createLockingPolicyScript(address,  (await getNetworkId()).id , expirationTime)
 
