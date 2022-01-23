@@ -40,6 +40,31 @@ class NamiWalletApi {
       }
     }
   }
+  
+  async getCollateral() {
+    /* 
+    get Collateral & transaction Id
+     */
+    try {
+      const collateralBytes = (await this.Nami.getCollateral())[0];
+      const collateral = this.S.TransactionUnspentOutput.from_bytes(
+        Buffer.from(collateralBytes, "hex")
+      );
+
+      let k = Buffer.from(
+        collateral.input().transaction_id().to_bytes(),
+        "hex"
+      ).toString("hex");
+
+      return {
+        collateral: collateral.output().amount().coin().to_str(),
+        transaction_id: k,
+      };
+    } catch (err) {
+      console.log("error in getCollateral method:", err);
+      return {};
+    }
+  }
 
   async getAddress() {
     
