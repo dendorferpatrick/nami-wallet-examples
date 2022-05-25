@@ -816,7 +816,7 @@ class NamiWalletApi {
         Outputs,
         ProtocolParameter,
 
-        metadata = null,
+        Metadata = null,
         
 
     }) {
@@ -864,9 +864,9 @@ class NamiWalletApi {
         }
 
 
-        let AUXILIARY_DATA
-        if (metadata) {
-            AUXILIARY_DATA = this.S.AuxiliaryData.new()
+        let aux
+        if (Metadata) {
+            aux = this.S.AuxiliaryData.new()
             const generalMetadata = this.S.GeneralTransactionMetadata.new();
             Object.entries(Metadata).map(([MetadataLabel, Metadata]) => {
             generalMetadata.insert(
@@ -877,7 +877,7 @@ class NamiWalletApi {
 
             aux.set_metadata(generalMetadata)
             
-            txBuilder.set_auxiliary_data(AUXILIARY_DATA)
+            txBuilder.set_auxiliary_data(aux)
         }
 
         for (let i = 0; i < Outputs.len(); i++) {
@@ -948,7 +948,7 @@ class NamiWalletApi {
         const transaction = this.S.Transaction.new(
             txBuilder.build(),
             this.S.TransactionWitnessSet.new(),
-            AUXILIARY_DATA
+            aux
         )
 
         const size = transaction.to_bytes().length * 2;
